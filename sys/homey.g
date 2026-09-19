@@ -1,0 +1,43 @@
+; ================================================================================
+; Home Y Axis - Dual-pass coarse/fine homing
+; Y homes to min (front) - Omron EE-SX67x on io5.in
+; Drops all four AWD drivers to open loop for homing, restores closed loop after
+; (per Duet 1HCL documentation). All four are switched because on CoreXY a Y move
+; drives both belts, so every motor participates.
+; ================================================================================
+
+; --- Drop to open loop ---
+M569 P70.0 S1 D2                                                ; X1 open loop
+M569 P71.0 S1 D2                                                ; X2 open loop
+M569 P72.0 S1 D2                                                ; Y1 open loop
+M569 P73.0 S1 D2                                                ; Y2 open loop
+
+; --- Enable Z and wait for brakes to physically release before moving ---
+; M569.7 fires the brake port at the same time as driver enable, but RRF gives
+; no automatic delay in this direction (S param on M569.7 only covers the
+; engage-on-disable side). Force enable and wait before the first Z move.
+M17 Z                                                            ; Enable Z, releasing brakes
+G4 P200                                                          ; Wait for brake solenoids to fully release (200ms verified 05/09/2026, 20 clean engage/release cycles; the intermittent fault is OUT1 not driving at all, which no delay fixes)
+
+G91                                                             ; Relative positioning
+G1 H2 Z5                                                        ; Lift Z for clearance
+G90                                                             ; Absolute positioning
+
+G91                                                             ; Relative positioning
+var maxTravel = move.axes[1].max - move.axes[1].min + 5
+G1 H1 Y{-var.maxTravel} F6000                                   ; Coarse home Y
+G1 Y5 F6000                                                     ; Back off 5mm (no H2 - CoreXY H2 is single-motor move, drives wrong way)
+G1 H1 Y{-var.maxTravel} F600                                    ; Fine home Y
+G90                                                             ; Absolute positioning
+
+G91                                                             ; Relative positioning
+G1 H2 Z-5 F6000                                                 ; Lower Z back
+G90                                                             ; Absolute positioning
+
+; --- Restore closed loop ---
+M400                                                            ; Wait for all moves to complete
+G4 P200                                                         ; Wait for motors to settle
+M569 P70.0 S1 D4                                                ; X1 closed loop
+M569 P71.0 S1 D4                                                ; X2 closed loop
+M569 P72.0 S1 D4                                                ; Y1 closed loop
+M569 P73.0 S1 D4                                                ; Y2 closed loop

@@ -1,0 +1,22 @@
+# ── Scope ─────────────────────────────────────────────────────────────────────
+# This repo lives ON the live DSF directory: the working tree IS the machine.
+# Nothing is copied or synced. Everything is excluded by default and only the
+# two configuration directories are let back in.
+/*
+!/.gitignore
+!/sys/
+!/macros/
+
+# ── Inside sys/ ───────────────────────────────────────────────────────────────
+# heightmap.csv is the working copy RRF recalls from the temperature-specific
+# maps (heightmap_bed*_ch*.csv), so it holds nothing the named maps do not, and
+# it rewrites on every mesh run.
+/sys/heightmap.csv
+
+# ── Credentials ───────────────────────────────────────────────────────────────
+# Belt and braces alongside the pre-commit secret scan. duetBackup kept a
+# plaintext GitHub token in sys/ until 19/09/2026.
+duetBackup/
+*.config.bak
+*.pem
+*.key
