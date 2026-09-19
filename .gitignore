@@ -13,6 +13,14 @@
 # it rewrites on every mesh run.
 /sys/heightmap.csv
 
+# RRF writes capture output into sys/ and recreates these directories on demand:
+#   accelerometer/  M956 input-shaping sweeps (4-6 MB per capture)
+#   closed-loop/    M569.5 closed-loop tuning captures
+# These are output, not configuration. They are renamed after capture and pulled
+# across to hevort_project/survey_data/, which is where they belong.
+/sys/accelerometer/
+/sys/closed-loop/
+
 # ── Credentials ───────────────────────────────────────────────────────────────
 # Belt and braces alongside the pre-commit secret scan. duetBackup kept a
 # plaintext GitHub token in sys/ until 19/09/2026.
