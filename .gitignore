@@ -28,3 +28,10 @@ duetBackup/
 *.config.bak
 *.pem
 *.key
+
+# ── Backup lock ───────────────────────────────────────────────────────────────
+# Pause the watcher to batch a few edits into one commit:
+#   echo "reason" > sys/BACKUP_PAUSED   pause, and set the eventual commit subject
+#   rm sys/BACKUP_PAUSED                resume; everything lands as ONE commit
+# Auto-expires after 10 min if forgotten — see hevort_config_watch.sh.
+/sys/BACKUP_PAUSED
