@@ -9,7 +9,7 @@
 ; macro RUNS G32 itself and verifies it converged before probing any grid.
 ;
 ; PREREQUISITES - mesh values are meaningless until these are real:
-;   - G31 Z trigger height is SET and derived: Z-0.134, config.g line 77.
+;   - G31 Z trigger height is SET and derived: Z-0.264, config.g line 77.
 ;   - M558 probe mode is RESOLVED: P9, config.g line 76.
 ;   - The FINAL granite slab is fitted (09/09/2026) with the mat bonded to it,
 ;     so maps taken on it are the real baseline, not provisional.
@@ -55,7 +55,7 @@ M557 X10:390 Y16:384 P7:7                                        ; 7x7 grid, cen
 ; --- 4. Probe setup ---
 M561                                                             ; Clear any active bed transform - never mesh on top of a mesh
 M558 K0 H5:2 F450:450 T12000 A8 S0.02                             ; Normal dive height; restate in case bed.g left it wide
-G31 P500 X0 Y0 Z-0.134                                            ; Re-issue trigger height - M558 wipes it
+G31 P500 X0 Y0 Z-0.264                                            ; Re-issue trigger height - M558 wipes it
 
 ; M569.7 fires the brake port at the same time as driver enable, but RRF gives
 ; no automatic delay in this direction - force enable and wait before moving Z.
