@@ -16,10 +16,9 @@
 ;   W = first layer footprint size X, mm           (optional)
 ;   D = first layer footprint size Y, mm           (optional)
 ;
-; L/F/W/D keep the purge line clear of the model. Without them the purge falls
-; back to the old fixed X10 Y6, so an old profile or a hand-sent M98 still works.
-; They also size the adaptive bed mesh (see 'Bed compensation' below). Without
-; them the stored named heightmap is loaded instead, as before.
+; L/F/W/D keep the purge line clear of the model and size the bed mesh. Without
+; them the purge falls back to the old fixed X10 Y6 and the WHOLE bed is meshed
+; (7x7), so an old profile or a hand-sent M98 still works.
 ; G32 runs on EVERY print regardless.
 ;
 ; ORDER MATTERS. The chamber and the bed both reach temperature BEFORE the Z
@@ -49,52 +48,38 @@ if result != 0                                          ; (bed.g homes itself if
     abort "printstart.g: G32 failed - bed not trammed"
 G1 Z5 F600                                              ; Lift straight away - never leave a hot nozzle sat on the bed
 
-; Bed compensation. With a first-layer footprint (L/F/W/D) the bed is meshed HERE,
-; at the temperature the print will actually run at, over just the area the part
-; covers: footprint + 10mm margin, clamped to mesh.g's proven reach (X10:390
-; Y16:384), points per axis = round(span/55)+1 clamped to 2..7. That replaces the
-; stored per-condition maps for any print that sends a footprint, and the
-; thermal-state mismatch they carry (Ellis-style: measure it as it will print).
-; Without a footprint (a hand-sent M98) the named map is loaded as before.
-; Map selection for that fallback - chamber FIRST: it moves the bed's shape ~3x
-; harder than bed temperature does (106um rms vs 34um, measured 19/09/2026).
-var meshFile = "heightmap_bed110_ch70.csv"              ; Chamber hot, bed 108+: ABS-GF25, PC, PA
-if var.haveModel
-    var x0 = {max(param.L - 10, 10)}
-    var x1 = {min(param.L + param.W + 10, 390)}
-    var y0 = {max(param.F - 10, 16)}
-    var y1 = {min(param.F + param.D + 10, 384)}
-    var nx = {min(max(floor((var.x1 - var.x0) / 55 + 0.5) + 1, 2), 7)}
-    var ny = {min(max(floor((var.y1 - var.y0) / 55 + 0.5) + 1, 2), 7)}
-    M557 X{var.x0, var.x1} Y{var.y0, var.y1} P{var.nx, var.ny}     ; comma-list form: X{a}:{b} is rejected on 3.7.0-rc.1 (tested 25/09/2026)
-    M561                                                ; Never mesh on top of a mesh
-    M558 K0 H5:2 F450:450 T12000 A8 S0.02               ; Normal probe settings, as mesh.g restates them
-    G31 P500 X0 Y0 Z{global.trigZ}                      ; M558 wipes the trigger height - re-issue it
-    M17 Z                                               ; Enable Z, releasing brakes
-    G4 P200                                             ; Brake release delay, as mesh.g
-    G1 Z5 F1000                                         ; Lift to dive height before the first travel
-    G29 S0                                              ; Probe the grid, activate, save to 0:/sys/heightmap.csv
-    if result != 0
-        M561                                            ; Do not leave a partial transform active
-        abort "printstart.g: adaptive mesh failed"
-    G1 X200 Y200 F9000                                  ; Bed centre - as mesh.g, re-datum there after meshing
-    G30                                                 ; Re-set Z0 datum at bed centre
-    if result != 0
-        abort "printstart.g: centre G30 failed after mesh - Z datum not set"
-    G1 Z5 F600                                          ; Lift straight away - never leave a hot nozzle sat on the bed
-    set var.meshFile = {"adaptive " ^ var.nx ^ "x" ^ var.ny}
-    M118 P0 S{"[START] adaptive mesh " ^ var.nx ^ "x" ^ var.ny ^ " over X" ^ var.x0 ^ ":" ^ var.x1 ^ " Y" ^ var.y0 ^ ":" ^ var.y1 ^ ", mean " ^ move.compensation.meshDeviation.mean ^ "mm, deviation " ^ move.compensation.meshDeviation.deviation ^ "mm"}
-else
-    if param.C < 40
-        set var.meshFile = {param.B >= 70 ? "heightmap_bed80_ch0.csv" : "heightmap_bed60_ch0.csv"}
-    elif param.B < 95
-        set var.meshFile = "heightmap_bed80_ch65.csv"       ; UltraPA-CF25
-    elif param.B < 108
-        set var.meshFile = "heightmap_bed105_ch60.csv"      ; ABS, ASA
-
-    G29 S1 P{var.meshFile}
-    if result != 0
-        abort "printstart.g: bed mesh failed to load"
+; Bed compensation. The bed is meshed HERE, at the temperature the print will
+; actually run at, over just the area the part covers: footprint + 10mm margin,
+; clamped to mesh.g's proven reach (X10:390 Y16:384), points per axis =
+; round(span/55)+1 clamped to 2..7. No stored maps are loaded - they carry the
+; thermal state they were taken in. With no footprint the whole bed is meshed.
+var fpL = {var.haveModel ? param.L : 0}
+var fpF = {var.haveModel ? param.F : 0}
+var fpW = {var.haveModel ? param.W : 400}
+var fpD = {var.haveModel ? param.D : 400}
+var x0 = {max(var.fpL - 10, 10)}
+var x1 = {min(var.fpL + var.fpW + 10, 390)}
+var y0 = {max(var.fpF - 10, 16)}
+var y1 = {min(var.fpF + var.fpD + 10, 384)}
+var nx = {min(max(floor((var.x1 - var.x0) / 55 + 0.5) + 1, 2), 7)}
+var ny = {min(max(floor((var.y1 - var.y0) / 55 + 0.5) + 1, 2), 7)}
+M557 X{var.x0, var.x1} Y{var.y0, var.y1} P{var.nx, var.ny}     ; comma-list form: X{a}:{b} is rejected on 3.7.0-rc.1 (tested 25/09/2026)
+M561                                                ; Never mesh on top of a mesh
+M558 K0 H5:2 F450:450 T12000 A8 S0.02               ; Normal probe settings, as mesh.g restates them
+G31 P500 X0 Y0 Z{global.trigZ}                      ; M558 wipes the trigger height - re-issue it
+M17 Z                                               ; Enable Z, releasing brakes
+G4 P200                                             ; Brake release delay, as mesh.g
+G1 Z5 F1000                                         ; Lift to dive height before the first travel
+G29 S0                                              ; Probe the grid, activate, save to 0:/sys/heightmap.csv
+if result != 0
+    M561                                            ; Do not leave a partial transform active
+    abort "printstart.g: adaptive mesh failed"
+G1 X200 Y200 F9000                                  ; Bed centre - as mesh.g, re-datum there after meshing
+G30                                                 ; Re-set Z0 datum at bed centre
+if result != 0
+    abort "printstart.g: centre G30 failed after mesh - Z datum not set"
+G1 Z5 F600                                          ; Lift straight away - never leave a hot nozzle sat on the bed
+M118 P0 S{"[START] adaptive mesh " ^ var.nx ^ "x" ^ var.ny ^ " over X" ^ var.x0 ^ ":" ^ var.x1 ^ " Y" ^ var.y0 ^ ":" ^ var.y1 ^ ", mean " ^ move.compensation.meshDeviation.mean ^ "mm, deviation " ^ move.compensation.meshDeviation.deviation ^ "mm"}
 
 ; --- Purge line, kept clear of the model ---------------------------------------
 ; Default is the old fixed line along the front edge. With a footprint, put it
@@ -130,4 +115,4 @@ if var.doPurge
 else
     M118 P0 S"[START] purge SKIPPED - model leaves no clear strip"
 
-M118 P0 S{"[START] bed " ^ param.B ^ "C, chamber " ^ param.C ^ "C, nozzle " ^ param.T ^ "C, purge " ^ var.doPurge ^ ", map " ^ var.meshFile}
+M118 P0 S{"[START] bed " ^ param.B ^ "C, chamber " ^ param.C ^ "C, nozzle " ^ param.T ^ "C, purge " ^ var.doPurge ^ ", mesh " ^ var.nx ^ "x" ^ var.ny}
