@@ -77,7 +77,7 @@ M42 P1 S0                                               ; ALPS enable LOW at boo
 ; printstart.g all read global.trigZ. Guarded so re-running config.g cannot fail
 ; on an existing global. Set by printed sweep; see project_notes.txt.
 if !exists(global.trigZ)
-    global trigZ = -0.234                                   ; 26/09/2026: was -0.264, tuned against the old stored map (~0.03 too close); per-print mesh removed that bias
+    global trigZ = -0.204                                   ; 26/09/2026: -0.264 -> -0.234 -> -0.204 in two 0.03 steps; the old stored map had been pulling the nozzle low, per-print mesh removed that
 M558 K0 P9 C"io6.in" H5:2 F450:450 T12000 A8 S0.02 B1   ; ALPS probe on io6.in
 G31 P500 X0 Y0 Z{global.trigZ}                          ; Probe trigger height and XY offsets
 M671 X424.75:201:-22.75 Y-8.75:415:-8.75 S40            ; Z0 front-right, Z1 rear, Z2 front-left; max 40mm correction
