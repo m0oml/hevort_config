@@ -1,7 +1,8 @@
 ; ================================================================================
 ; Bed Mesh Macro - Grid Levelling (G29 S0)
 ; Probes a grid over the bed with the ALPS strain-gauge probe (K0) and saves the
-; result to 0:/sys/heightmap.csv. printstart.g loads it with G29 S1.
+; result to 0:/sys/heightmap.csv. printstart.g no longer loads stored maps - it meshes
+; each print itself (25/09/2026); this macro is now the manual full-bed survey.
 ;
 ; This is the step AFTER G32 (bed.g). G32 corrects the bed PLANE via the three Z
 ; motors; this corrects what is left - slab, FR4 and PEI surface irregularity.

@@ -8,9 +8,10 @@
 !/macros/
 
 # ── Inside sys/ ───────────────────────────────────────────────────────────────
-# heightmap.csv is the working copy RRF recalls from the temperature-specific
-# maps (heightmap_bed*_ch*.csv), so it holds nothing the named maps do not, and
-# it rewrites on every mesh run.
+# heightmap.csv is rewritten by every mesh (printstart.g meshes each print; mesh.g is
+# the manual full-bed survey), so it is scratch output, not config. The old
+# per-condition maps (heightmap_bed*_ch*.csv) were retired 26/09/2026: they are in git
+# history and in hevort_project/survey_data/thermal_map_set_20260919/.
 /sys/heightmap.csv
 
 # RRF writes capture output into sys/ and recreates these directories on demand:
