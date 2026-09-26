@@ -84,12 +84,13 @@ M118 P0 S{"[START] adaptive mesh " ^ var.nx ^ "x" ^ var.ny ^ " over X" ^ var.x0 
 ; --- Purge line, kept clear of the model ---------------------------------------
 ; Default is the old fixed line along the front edge. With a footprint, put it
 ; 6mm in front of the part, or 6mm behind it when the part starts near the front
-; edge. Line geometry is KAMP's: 1mm of filament per 1mm of travel, which gives
+; edge, starting at the part's left edge in X. Line geometry is KAMP's: 1mm of filament per 1mm of travel, which gives
 ; a 3.0mm wide by 0.8mm tall bead (1.75mm filament = 2.405mm2 per mm of travel).
 var purgeY = 6
 var purgeX = 10
 var doPurge = true
 if var.haveModel
+    set var.purgeX = {min(max(var.fpL, 10), 340)}         ; Line starts at the part's left edge, clamped so the 50mm run ends by X390
     if param.F >= 12
         set var.purgeY = {param.F - 6}
     elif {param.F + param.D + 6} <= 395
